@@ -2,20 +2,18 @@ const video = document.getElementById('videoFeed');
 const textOutput = document.getElementById('textOutput');
 const voiceBtn = document.getElementById('voiceBtn');
 
-// Access WebCam
+
 async function setupCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     video.srcObject = stream;
 }
 
-// Function to send frame to Python Backend
 async function sendFrame() {
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     
-    // Convert to Base64 to send via JSON
     const dataUrl = canvas.toDataURL('image/jpeg');
 
     try {
@@ -38,5 +36,4 @@ voiceBtn.addEventListener('click', () => {
 });
 
 setupCamera();
-// Run prediction every 500ms (adjust based on your RNN sequence length)
 setInterval(sendFrame, 500);
