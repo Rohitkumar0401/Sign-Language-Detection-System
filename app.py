@@ -13,21 +13,16 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json['image']
-    # Decode the base64 image
     header, encoded = data.split(",", 1)
     data = base64.b64decode(encoded)
     
-    # Convert to OpenCV format
     nparr = np.frombuffer(data, np.uint8)
     frame = cv2.imdecode(nparr, cv2.imread_color)
 
-    # --- YOUR MODEL WORK HERE ---
-    # 1. Preprocess frame
-    # 2. Pass to CNN for feature extraction
-    # 3. Pass sequence to RNN/LSTM
-    # prediction = predict_sign(frame)
+    #  MODEL WORK HERE ---
     
-    prediction = "HELLO" # Placeholder result
+    
+    prediction = "HELLO" 
 
     return jsonify({'prediction': prediction})
 
