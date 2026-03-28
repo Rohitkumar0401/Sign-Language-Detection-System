@@ -29,7 +29,7 @@ class_names = sorted([
     d for d in os.listdir(DATASET_PATH)
     if os.path.isdir(os.path.join(DATASET_PATH, d))
 ])
-print(f"✅ Dataset found: {DATASET_PATH}")
+print(f" Dataset found: {DATASET_PATH}")
 print(f"   Classes ({len(class_names)}): {class_names}\n")
 
 print("Loading images ...")
@@ -71,7 +71,7 @@ X_train, X_val, y_train, y_val = train_test_split(
     random_state=42,
     stratify=y_enc
 )
-print(f"📊 Train: {len(X_train)}  |  Validation: {len(X_val)}\n")
+print(f" Train: {len(X_train)}  |  Validation: {len(X_val)}\n")
 
 model = models.Sequential([
     layers.Conv2D(32, (3,3), activation='relu', padding='same', input_shape=(IMG_SIZE, IMG_SIZE, 3)),
@@ -117,7 +117,7 @@ cb_list = [
                              restore_best_weights=True, verbose=1),
 ]
 
-print("\n🚀 Training started ...\n")
+print("\n Training started ...\n")
 history = model.fit(
     X_train, y_train,
     batch_size=BATCH_SIZE,
