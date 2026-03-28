@@ -1,16 +1,4 @@
-"""
-================================================
-  SIGN LANGUAGE DETECTION — REAL TIME
-  Framework: TensorFlow/Keras
-  Hand Detection: OpenCV (no mediapipe needed)
-================================================
 
-CONTROLS:
-  Q        — Quit
-  SPACE    — Pause / Resume
-  C        — Clear text
-  T        — Toggle TTS
-"""
 
 import cv2
 import numpy as np
@@ -21,7 +9,6 @@ import threading
 import sys
 import os
 
-# ── Config ────────────────────────────────────────────────
 MODEL_PATH        = "model.h5"
 LABEL_MAP_PATH    = "label_map.npy"
 IMG_SIZE          = 64
@@ -29,15 +16,12 @@ CONFIDENCE_THRESH = 0.80
 STABLE_FRAMES     = 10
 SPEAK_COOLDOWN    = 2.0
 
-# Hand ROI — fixed box in center of frame
-# Adjust these if needed
+
 ROI_TOP    = 100
 ROI_BOTTOM = 400
 ROI_LEFT   = 300
 ROI_RIGHT  = 600
 # ──────────────────────────────────────────────────────────
-
-# ── Load model & labels ───────────────────────────────────
 if not os.path.exists(MODEL_PATH):
     print(f"'{MODEL_PATH}' not found. Run train_model.py first.")
     sys.exit(1)
@@ -50,7 +34,6 @@ model   = tf.keras.models.load_model(MODEL_PATH)
 classes = np.load(LABEL_MAP_PATH, allow_pickle=True)
 print(f"✅ Model loaded. Classes: {list(classes)}\n")
 
-# ── TTS ───────────────────────────────────────────────────
 tts_engine   = pyttsx3.init()
 tts_engine.setProperty('rate', 160)
 tts_engine.setProperty('volume', 0.9)
@@ -64,13 +47,11 @@ def speak_async(text):
         tts_engine.runAndWait()
     threading.Thread(target=_run, daemon=True).start()
 
-# ── Webcam ────────────────────────────────────────────────
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print(" Cannot open webcam.")
     sys.exit(1)
 
-# ── State ─────────────────────────────────────────────────
 sentence     = ""
 prev_label   = None
 stable_count = 0
@@ -102,7 +83,6 @@ while True:
     frame = cv2.flip(frame, 1)
     h, w  = frame.shape[:2]
 
-    # ── FPS ───────────────────────────────────────────────
     now        = time.time()
     fps        = 1.0 / max(now - frame_time, 1e-6)
     frame_time = now
@@ -114,14 +94,12 @@ while True:
     predicted_label = None
     confidence      = 0.0
 
-    # ── ROI box coords (clipped to frame) ─────────────────
     y1 = max(0, ROI_TOP)
     y2 = min(h, ROI_BOTTOM)
     x1 = max(0, ROI_LEFT)
     x2 = min(w, ROI_RIGHT)
 
     if not paused:
-        # Crop hand region
         hand_crop = frame[y1:y2, x1:x2]
 
         if hand_crop.size > 0:
@@ -135,7 +113,6 @@ while True:
             else:
                 predicted_label = "?"
 
-        # ── Stability ─────────────────────────────────────
         if predicted_label and predicted_label != "?":
             if predicted_label == prev_label:
                 stable_count += 1
@@ -160,13 +137,11 @@ while True:
         else:
             stable_count = 0
 
-    # ── Draw ROI box ──────────────────────────────────────
     box_color = C_GREEN if (predicted_label and predicted_label != "?") else (0, 150, 255)
     cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 3)
     cv2.putText(frame, "Place hand here", (x1, y1 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, box_color, 2)
 
-    # ── Top bar ───────────────────────────────────────────
     cv2.rectangle(frame, (0, 0), (w, 55), (20, 20, 20), -1)
     cv2.putText(frame, f"FPS: {avg_fps:.1f}", (10, 38),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, C_BLUE, 2)
@@ -175,7 +150,6 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7,
                 C_GREEN if tts_enabled else C_GRAY, 2)
 
-    # ── Paused overlay ────────────────────────────────────
     if paused:
         overlay = frame.copy()
         cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
@@ -183,7 +157,6 @@ while True:
         cv2.putText(frame, "PAUSED", (w // 2 - 100, h // 2),
                     cv2.FONT_HERSHEY_DUPLEX, 2.0, C_BLUE, 3)
 
-    # ── Prediction display ────────────────────────────────
     if predicted_label and not paused:
         conf_pct = int(confidence * 100)
         cv2.rectangle(frame, (0, h - 110), (280, h), (20, 20, 20), -1)
@@ -193,7 +166,6 @@ while True:
         cv2.putText(frame, label_disp, (10, h - 28),
                     cv2.FONT_HERSHEY_DUPLEX, 1.8, C_GREEN, 3)
 
-        # Confidence bar
         bar_x, bar_y, bar_w, bar_bh = 10, h - 15, 200, 10
         cv2.rectangle(frame, (bar_x, bar_y),
                       (bar_x + bar_w, bar_y + bar_bh), C_GRAY, -1)
@@ -204,7 +176,6 @@ while True:
         cv2.putText(frame, f"{conf_pct}%", (bar_x + bar_w + 8, bar_y + 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, C_WHITE, 1)
 
-    # ── Stability ring ────────────────────────────────────
     if not paused:
         ring_frac = stable_count / STABLE_FRAMES
         cv2.circle(frame, (w - 40, h - 40), 22, C_GRAY, 2)
@@ -212,13 +183,11 @@ while True:
             cv2.ellipse(frame, (w - 40, h - 40), (22, 22),
                         -90, 0, int(360 * ring_frac), C_GREEN, 3)
 
-    # ── Sentence panel ────────────────────────────────────
     panel_y = h - 145
     cv2.rectangle(frame, (0, panel_y), (w, panel_y + 35), (30, 30, 30), -1)
     cv2.putText(frame, "Text: " + sentence[-50:], (10, panel_y + 24),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.72, C_WHITE, 2)
 
-    # ── Hints ─────────────────────────────────────────────
     hints = ["Q:Quit", "SPC:Pause", "C:Clear", "T:TTS"]
     for i, hint in enumerate(hints):
         cv2.putText(frame, hint, (w - 115, 85 + i * 22),
